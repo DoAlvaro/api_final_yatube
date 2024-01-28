@@ -59,6 +59,7 @@ python3 manage.py runserver
 ![image](https://github.com/DoAlvaro/api_final_yatube/assets/101565798/82defbbd-0614-4b45-a507-cbce0c46f8cb)
 
 Получение комментария к публикации по id.
+
 ![image](https://github.com/DoAlvaro/api_final_yatube/assets/101565798/e869ddc1-f030-4bfd-9779-724f2c1ea6fa)
 
 Полный список запросов к эндпоинтам можно найти в /redoc/
