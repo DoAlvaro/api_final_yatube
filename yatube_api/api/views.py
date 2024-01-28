@@ -1,7 +1,6 @@
 from posts.models import Comment, Follow, Group, Post
-from rest_framework import filters, permissions, status, viewsets
+from rest_framework import filters, mixins, permissions, viewsets
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.response import Response
 
 from .permissions import IsAuthorOrReadOnlyPermission
 from .serializers import (CommentSerializer, FollowSerializer, GroupSerializer,
@@ -28,22 +27,12 @@ class CommentViewSet(viewsets.ModelViewSet):
     pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
-        post = Post.objects.get(id=self.kwargs.get('post_id', 1))
+        post = Post.objects.get(id=self.kwargs.get('post_id'))
         return Comment.objects.filter(post=post)
 
-    def create(self, request, *args, **kwargs):
-        try:
-            if 'pk' in kwargs:
-                post = Post.objects.get(id=kwargs.get('pk'))
-            else:
-                post = Post.objects.get(id=kwargs.get('post_id'))
-        except Post.DoesNotExist:
-            return Response({"detail": "Post does not exist"},
-                            status=status.HTTP_400_BAD_REQUEST)
-        serializer = CommentSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save(post=post, author=request.user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    def perform_create(self, serializer):
+        post = Post.objects.get(id=self.kwargs.get('post_id'))
+        serializer.save(post=post, author=self.request.user)
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
@@ -54,11 +43,9 @@ class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     pagination_class = LimitOffsetPagination
 
-    def create(self, request):
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-
-class FollowViewSet(viewsets.ModelViewSet):
+class FollowViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
+                    viewsets.GenericViewSet):
     serializer_class = FollowSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filter_backends = (filters.SearchFilter,)
